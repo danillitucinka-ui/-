@@ -1,8 +1,6 @@
 package com.musicplayer.service
 
 import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Intent
 import android.os.Build
@@ -15,8 +13,8 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
-import com.musicplayer.R
 import com.musicplayer.ui.MainActivity
+import com.musicplayer.util.ForegroundServiceHelper
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -30,23 +28,8 @@ class MusicPlaybackService : MediaSessionService() {
 
     override fun onCreate() {
         super.onCreate()
-        createNotificationChannel()
+        ForegroundServiceHelper.createNotificationChannel(this)
         initializePlayer()
-    }
-
-    private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "Music Playback",
-                NotificationManager.IMPORTANCE_LOW
-            ).apply {
-                description = "Music playback controls"
-                setShowBadge(false)
-            }
-            val notificationManager = getSystemService(NotificationManager::class.java)
-            notificationManager.createNotificationChannel(channel)
-        }
     }
 
     private fun initializePlayer() {
@@ -82,6 +65,32 @@ class MusicPlaybackService : MediaSessionService() {
         super.onDestroy()
     }
 
+    /**
+     * Start foreground service with proper version handling
+     */
+    fun startForegroundWithNotification(notification: Notification) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            // Android 14+ requires foreground service type
+            startForeground(
+                ForegroundServiceHelper.getNotificationId(),
+                notification,
+                ForegroundServiceHelper.getForegroundServiceType()
+            )
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // Android 10-13
+            startForeground(
+                ForegroundServiceHelper.getNotificationId(),
+                notification
+            )
+        } else {
+            // Android 9 and below
+            startForeground(
+                ForegroundServiceHelper.getNotificationId(),
+                notification
+            )
+        }
+    }
+
     private inner class MediaSessionCallback : MediaSession.Callback {
         override fun onAddMediaItems(
             mediaSession: MediaSession,
@@ -95,10 +104,5 @@ class MusicPlaybackService : MediaSessionService() {
             }.toMutableList()
             return com.google.common.util.concurrent.Futures.immediateFuture(updatedMediaItems)
         }
-    }
-
-    companion object {
-        const val CHANNEL_ID = "music_playback_channel"
-        const val NOTIFICATION_ID = 1
     }
 }

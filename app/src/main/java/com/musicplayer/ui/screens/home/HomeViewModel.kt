@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.musicplayer.data.model.Song
 import com.musicplayer.domain.usecase.song.GetAllSongsUseCase
 import com.musicplayer.domain.usecase.song.GetFavoriteSongsUseCase
+import com.musicplayer.domain.usecase.song.LoadSongsFromDeviceUseCase
 import com.musicplayer.domain.usecase.song.UpdateFavoriteStatusUseCase
 import com.musicplayer.service.MusicPlayerManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -19,6 +20,7 @@ enum class SortBy {
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val getAllSongsUseCase: GetAllSongsUseCase,
+    private val loadSongsFromDeviceUseCase: LoadSongsFromDeviceUseCase,
     private val updateFavoriteStatusUseCase: UpdateFavoriteStatusUseCase,
     private val musicPlayerManager: MusicPlayerManager
 ) : ViewModel() {
@@ -48,6 +50,18 @@ class HomeViewModel @Inject constructor(
 
     val currentSong: StateFlow<Song?> = musicPlayerManager.currentSong
     val isPlaying: StateFlow<Boolean> = musicPlayerManager.isPlaying
+
+    init {
+        // Load songs from device on initialization
+        viewModelScope.launch {
+            try {
+                loadSongsFromDeviceUseCase()
+            } catch (e: Exception) {
+                // Handle error loading songs
+                _isLoading.value = false
+            }
+        }
+    }
 
     fun setSortBy(sortBy: SortBy) {
         _sortBy.value = sortBy

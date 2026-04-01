@@ -82,7 +82,8 @@ app/
 
 ## Requirements
 
-- Android SDK 26+ (Android 8.0 Oreo or higher)
+- Android SDK 28+ (Android 9 Pie or higher)
+- Target SDK 34 (Android 14)
 - Kotlin 1.9.22+
 - Gradle 8.2.2+
 - JDK 17
@@ -172,12 +173,32 @@ The CI/CD workflow is located at `.github/workflows/android-build.yml` and inclu
 
 The app requires the following permissions:
 
-- `READ_MEDIA_AUDIO`: Read audio files from device storage
-- `READ_EXTERNAL_STORAGE`: Read external storage (for Android 12 and below)
-- `FOREGROUND_SERVICE`: Run music playback in foreground
-- `FOREGROUND_SERVICE_MEDIA_PLAYBACK`: Media playback foreground service
-- `POST_NOTIFICATIONS`: Show playback notifications
+- `READ_MEDIA_AUDIO`: Read audio files from device storage (Android 13+)
+- `READ_EXTERNAL_STORAGE`: Read external storage (Android 9-12)
+- `FOREGROUND_SERVICE`: Run music playback in foreground (Android 9-13)
+- `FOREGROUND_SERVICE_MEDIA_PLAYBACK`: Media playback foreground service (Android 14+)
+- `POST_NOTIFICATIONS`: Show playback notifications (Android 13+)
 - `WAKE_LOCK`: Keep device awake during playback
+- `SCHEDULE_EXACT_ALARM`: Schedule exact alarms for sleep timer (Android 12+)
+
+## Backward Compatibility
+
+This app supports Android 9 (API 28) through Android 14 (API 34) with full backward compatibility:
+
+### Version-Specific Handling
+
+- **Android 9 (API 28)**: Uses `READ_EXTERNAL_STORAGE` permission for file access
+- **Android 10 (API 29)**: Enforces scoped storage, uses `MediaStore` API for file access
+- **Android 11 (API 30)**: Continues scoped storage enforcement
+- **Android 12 (API 31)**: Adds `SCHEDULE_EXACT_ALARM` permission for sleep timer
+- **Android 13 (API 33)**: Requires `READ_MEDIA_AUDIO` and `POST_NOTIFICATIONS` permissions
+- **Android 14 (API 34)**: Requires `FOREGROUND_SERVICE_MEDIA_PLAYBACK` permission for foreground services
+
+### Utility Classes
+
+- **PermissionHandler**: Manages runtime permissions across all Android versions
+- **StorageHelper**: Handles scoped storage for Android 10+ with fallback for older versions
+- **ForegroundServiceHelper**: Manages foreground service restrictions for Android 14+
 
 ## Architecture
 
